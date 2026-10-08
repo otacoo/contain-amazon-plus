@@ -6,12 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
-- Use a unique add-on ID, `amazon-container-plus@otacoo`, so AMO no longer reports a duplicate with the fork.
 - Require Firefox 142 (`strict_min_version`), as needed for `data_collection_permissions`.
 
-### Fixed
-
-- Republish 2.1.0 with the manifest consent keys required by AMO validation.
 
 ## [2.1.0] - 2026-10-08
 
