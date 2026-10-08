@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Renamed the extension to Amazon Container Plus.
 - Amazon host matching is now case-insensitive and escapes regex metacharacters, avoiding false positives.
 - Cookie and Service Worker cleanup runs once per domain instead of once per container.
 
