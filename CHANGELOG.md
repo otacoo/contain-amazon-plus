@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [2.1.0] - 2026-10-08
+
+### Changed
+
+- Project moved to github.com/otacoo/contain-amazon.
 
 ### Added
 
@@ -47,7 +51,8 @@ All notable changes to this project will be documented in this file.
 
 - Initial release: isolates Amazon into a container and prevents Amazon from tracking browsing outside of it.
 
-[Unreleased]: https://github.com/otacoo/contain-amazon/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/otacoo/contain-amazon/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/otacoo/contain-amazon/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/otacoo/contain-amazon/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/otacoo/contain-amazon/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/otacoo/contain-amazon/releases/tag/v1.0.0

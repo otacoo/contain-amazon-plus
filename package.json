@@ -1,6 +1,6 @@
 {
   "name": "contain-amazon",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Amazon Container Plus isolates your Amazon activity from the rest of your web activity in order to prevent Amazon from tracking you outside of the Amazon website via third party cookies. ",
   "main": "background.js",
   "scripts": {
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:krober/contain-amazon.git"
+    "url": "git@github.com:otacoo/contain-amazon.git"
   },
   "keywords": [
     "addon",
@@ -22,9 +22,9 @@
   "author": "Kyle Rober",
   "license": "MPL-2.0",
   "bugs": {
-    "url": "https://github.com/krober/contain-amazon/issues"
+    "url": "https://github.com/otacoo/contain-amazon/issues"
   },
-  "homepage": "https://github.com/krober/contain-amazon#readme",
+  "homepage": "https://github.com/otacoo/contain-amazon#readme",
   "devDependencies": {
     "chai": "^4.1.2",
     "cross-env": "^5.2.0",

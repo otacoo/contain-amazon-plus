@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "Amazon Container Plus",
-    "version": "2.0.0",
+    "version": "2.1.0",
 
     "description": "Amazon Container Plus isolates your Amazon activity from the rest of your web activity in order to prevent Amazon from tracking you outside of the Amazon ecosystem via third party cookies.",
 
@@ -17,7 +17,7 @@
       }
     },
 
-    "homepage_url": "https://github.com/krober/contain-amazon",
+    "homepage_url": "https://github.com/otacoo/contain-amazon",
 
     "permissions": [
         "<all_urls>",
