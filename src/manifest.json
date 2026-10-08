@@ -33,5 +33,10 @@
 
     "background": {
         "scripts": ["background.js"]
+    },
+
+    "options_ui": {
+        "page": "options.html",
+        "browser_style": true
     }
 }

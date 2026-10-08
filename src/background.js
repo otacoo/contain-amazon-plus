@@ -408,7 +408,11 @@ async function addDomainToAmazonContainer (url) {
   try {
     host = new URL(url).host.toLowerCase();
   } catch (e) {
-    return;
+    try {
+      host = new URL(`https://${url}`).host.toLowerCase();
+    } catch (e2) {
+      return;
+    }
   }
   const azcStorage = await browser.storage.local.get();
   if (!Array.isArray(azcStorage.domainsAddedToAmazonContainer)) {
@@ -655,6 +659,8 @@ function setupWebRequestListeners() {
       });
     } else if (message && typeof message === "object" && message.removeDomain) {
       return removeDomainFromAmazonContainer(message.removeDomain);
+    } else if (message && typeof message === "object" && message.addDomain) {
+      return addDomainToAmazonContainer(message.addDomain);
     } else if (senderUrl) {
       return addDomainToAmazonContainer(senderUrl);
     }

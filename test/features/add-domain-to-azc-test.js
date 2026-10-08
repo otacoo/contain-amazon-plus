@@ -35,4 +35,34 @@ describe("Add domain to Amazon Container", () => {
     });
   });
 
+  describe("runtime message addDomain", () => {
+    const addDomain = async domain => {
+      const results = background.browser.runtime.onMessage.addListener.yield({addDomain: domain}, {});
+      await Promise.all(results);
+    };
+
+    const getSites = async () => {
+      const [promise] = background.browser.runtime.onMessage.addListener.yield("what-sites-are-added", {});
+      return promise;
+    };
+
+    it("should add a bare domain", async () => {
+      await addDomain("example.org");
+      const sites = await getSites();
+      expect(sites.includes("example.org")).to.be.true;
+    });
+
+    it("should add the host of a full URL", async () => {
+      await addDomain("https://www.example.net/some/path?q=1");
+      const sites = await getSites();
+      expect(sites.includes("www.example.net")).to.be.true;
+    });
+
+    it("should ignore an invalid domain", async () => {
+      await addDomain("not a domain");
+      const sites = await getSites();
+      expect(sites).to.deep.equal([]);
+    });
+  });
+
 });

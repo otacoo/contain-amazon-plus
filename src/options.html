@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Amazon Container Options</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 1em;
+      max-width: 40em;
+    }
+    #add-domain-form {
+      display: flex;
+      gap: 0.5em;
+      margin-bottom: 0.5em;
+    }
+    #domain-input {
+      flex: 1;
+    }
+    #form-error {
+      color: #a40000;
+    }
+    #domain-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    #domain-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #d7d7db;
+      padding: 0.4em 0;
+    }
+    #domain-list button {
+      margin-left: 1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Amazon Container Options</h1>
+  <p>
+    Domains listed here open in the Amazon Container, in addition to Amazon
+    and its services. Enter a domain such as <code>example.com</code>. Only
+    the exact hostname is matched, not its subdomains.
+  </p>
+  <form id="add-domain-form">
+    <label for="domain-input">Domain</label>
+    <input id="domain-input" type="text" placeholder="example.com" required>
+    <button type="submit">Add</button>
+  </form>
+  <p id="form-error" hidden></p>
+  <h2>Custom domains</h2>
+  <p id="empty-message">No custom domains added yet.</p>
+  <ul id="domain-list"></ul>
+  <script src="options.js"></script>
+</body>
+</html>
