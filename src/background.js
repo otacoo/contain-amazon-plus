@@ -89,7 +89,11 @@ const AMAZON_SERVICES_DOMAINS = [
   "primevideo.com",
   "twitch.com",
   "twitch.tv",
-  "ext-twitch.tv"
+  "ext-twitch.tv",
+  "ttvnw.net",
+  "jtvnw.net",
+  "twitchcdn.net",
+  "twitchsvc.net"
 ];
 
 let AMAZON_DOMAINS = [
@@ -132,9 +136,12 @@ let amazonCookieStoreId = null;
 
 const canceledRequests = {};
 const tabsWaitingToLoad = {};
-const tabStates = {};
 
 const amazonHostREs = [];
+
+function escapeRegExp (string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 async function isMACAddonEnabled () {
   try {
@@ -250,8 +257,9 @@ function shouldCancelEarly (tab, options) {
 }
 
 function generateAmazonHostREs () {
+  amazonHostREs.length = 0;
   for (let amazonDomain of AMAZON_DOMAINS) {
-    amazonHostREs.push(new RegExp(`^(.*\\.)?${amazonDomain}$`));
+    amazonHostREs.push(new RegExp(`^(.*\\.)?${escapeRegExp(amazonDomain)}$`, "i"));
   }
 }
 
@@ -271,9 +279,11 @@ async function clearAmazonCookies () {
     macAssignments = await Promise.all(promises);
   }
 
-  AMAZON_DOMAINS.map(async amazonDomain => {
-    const amazonCookieUrl = `https://${amazonDomain}/`;
+  const containerStoreIds = new Set(containers.map(container => container.cookieStoreId));
+  containerStoreIds.delete(amazonCookieStoreId);
+  const allCookies = await browser.cookies.getAll({});
 
+  await Promise.all(AMAZON_DOMAINS.map(async amazonDomain => {
     // dont clear cookies for amazonDomain if mac assigned (with or without www.)
     if (macAddonEnabled &&
         (macAssignments.includes(amazonDomain) ||
@@ -281,39 +291,35 @@ async function clearAmazonCookies () {
       return;
     }
 
-    containers.map(async container => {
-      const storeId = container.cookieStoreId;
-      if (storeId === amazonCookieStoreId) {
+    const cookies = allCookies.filter(cookie => {
+      if (!containerStoreIds.has(cookie.storeId)) {
         // Don't clear cookies in the Amazon Container
-        return;
+        return false;
       }
-
-      const cookies = await browser.cookies.getAll({
-        domain: amazonDomain,
-        storeId
-      });
-
-      cookies.map(cookie => {
-        browser.cookies.remove({
-          name: cookie.name,
-          url: amazonCookieUrl,
-          storeId
-        });
-      });
-      // Also clear Service Workers as it breaks detecting onBeforeRequest
-      await browser.browsingData.remove({hostnames: [amazonDomain]}, {serviceWorkers: true});
+      const cookieDomain = cookie.domain.startsWith(".") ? cookie.domain.slice(1) : cookie.domain;
+      return cookieDomain === amazonDomain || cookieDomain.endsWith(`.${amazonDomain}`);
     });
-  });
+
+    await Promise.all(cookies.map(cookie => {
+      const cookieDomain = cookie.domain.startsWith(".") ? cookie.domain.slice(1) : cookie.domain;
+      return browser.cookies.remove({
+        name: cookie.name,
+        url: `https://${cookieDomain}${cookie.path || "/"}`,
+        storeId: cookie.storeId
+      }).catch(() => {});
+    }));
+
+    // Also clear Service Workers as it breaks detecting onBeforeRequest
+    try {
+      await browser.browsingData.remove({hostnames: [amazonDomain]}, {serviceWorkers: true});
+    } catch (e) {
+      // Ignore Service Worker cleanup errors so one failure doesn't abort the wipe
+    }
+  }));
 }
 
 async function setupContainer () {
   // Use existing Amazon container, or create one
-
-  const info = await browser.runtime.getBrowserInfo();
-  if (parseInt(info.version) < 67) {
-    AMAZON_CONTAINER_DETAILS.color = "orange";
-    AMAZON_CONTAINER_DETIALS.color = "briefcase";
-  }
 
   const contexts = await browser.contextualIdentities.query({name: AMAZON_CONTAINER_DETAILS.name});
   if (contexts.length > 0) {
@@ -321,10 +327,10 @@ async function setupContainer () {
     amazonCookieStoreId = amazonContext.cookieStoreId;
     if (amazonContext.color !== AMAZON_CONTAINER_DETAILS.color ||
         amazonContext.icon !== AMAZON_CONTAINER_DETAILS.icon) {
-          await browser.contextualIdentities.update(
-            amazonCookieStoreId,
-            { color: AMAZON_CONTAINER_DETAILS.color, icon: AMAZON_CONTAINER_DETAILS.icon }
-          );
+      await browser.contextualIdentities.update(
+        amazonCookieStoreId,
+        { color: AMAZON_CONTAINER_DETAILS.color, icon: AMAZON_CONTAINER_DETAILS.icon }
+      );
     }
   } else {
     const context = await browser.contextualIdentities.create(AMAZON_CONTAINER_DETAILS);
@@ -360,53 +366,85 @@ async function maybeReopenTab(url, tab, request) {
     windowId: tab.windowId
   });
 
-  browser.tabs.remove(tab.id);
+  try {
+    await browser.tabs.remove(tab.id);
+  } catch (e) {
+    // Tab may already be gone, ignore
+  }
 
   return { cancel: true };
 }
 
 function isAmazonURL (url) {
-  const parsedUrl = new URL(url);
+  let host;
+  try {
+    host = new URL(url).host.toLowerCase();
+  } catch (e) {
+    return false;
+  }
   for (let amazonHostRE of amazonHostREs) {
-    if (amazonHostRE.test(parsedUrl.host)) {
+    // Reset lastIndex in case any regex ever becomes global
+    amazonHostRE.lastIndex = 0;
+    if (amazonHostRE.test(host)) {
       return true;
     }
   }
   return false;
 }
 
-async function supportsSiteSubdomainCheck(url) {
-  // No subdomains to check at this time
-  return;
-}
-
 async function addDomainToAmazonContainer (url) {
-  const parsedUrl = new URL(url);
+  let host;
+  try {
+    host = new URL(url).host.toLowerCase();
+  } catch (e) {
+    return;
+  }
   const azcStorage = await browser.storage.local.get();
-  azcStorage.domainsAddedToAmazonContainer.push(parsedUrl.host);
-  await browser.storage.local.set({"domainsAddedToAmazonContainer": azcStorage.domainsAddedToAmazonContainer});
-  await supportSiteSubdomainCheck(parsedUrl.host);
+  if (!Array.isArray(azcStorage.domainsAddedToAmazonContainer)) {
+    azcStorage.domainsAddedToAmazonContainer = [];
+  }
+  if (!azcStorage.domainsAddedToAmazonContainer.includes(host)) {
+    azcStorage.domainsAddedToAmazonContainer.push(host);
+    await browser.storage.local.set({"domainsAddedToAmazonContainer": azcStorage.domainsAddedToAmazonContainer});
+  }
 }
 
 async function removeDomainFromAmazonContainer (domain) {
   const azcStorage = await browser.storage.local.get();
+  if (!Array.isArray(azcStorage.domainsAddedToAmazonContainer)) {
+    return;
+  }
   const domainIndex = azcStorage.domainsAddedToAmazonContainer.indexOf(domain);
+  if (domainIndex === -1) {
+    return;
+  }
   azcStorage.domainsAddedToAmazonContainer.splice(domainIndex, 1);
   await browser.storage.local.set({"domainsAddedToAmazonContainer": azcStorage.domainsAddedToAmazonContainer});
 }
 
 async function isAddedToAmazonContainer (url) {
-  const parsedUrl = new URL(url);
+  let host;
+  try {
+    host = new URL(url).host.toLowerCase();
+  } catch (e) {
+    return false;
+  }
   const azcStorage = await browser.storage.local.get();
-  if (azcStorage.domainsAddedToAmazonContainer.includes(parsedUrl.host)) {
+  if (!Array.isArray(azcStorage.domainsAddedToAmazonContainer)) {
+    return false;
+  }
+  if (azcStorage.domainsAddedToAmazonContainer.includes(host)) {
     return true;
   }
   return false;
 }
 
 async function shouldContainInto (url, tab) {
-  if (!url.startsWith("http")) {
+  if (typeof url !== "string" || !url.startsWith("http")) {
     // we only handle URLs starting with http(s)
+    return false;
+  }
+  if (!tab) {
     return false;
   }
 
@@ -432,7 +470,7 @@ async function maybeReopenAlreadyOpenTabs () {
     if (changeInfo.url && tabsWaitingToLoad[tabId]) {
       // Tab we're waiting for switched it's url, maybe we reopen
       delete tabsWaitingToLoad[tabId];
-      maybeReopenTab(tab.url, tab);
+      maybeReopenTab(tab.url, tab).catch(() => {});
     }
     if (tab.status === "complete" && tabsWaitingToLoad[tabId]) {
       // Tab we're waiting for completed loading
@@ -446,10 +484,10 @@ async function maybeReopenAlreadyOpenTabs () {
 
   // Query for already open Tabs
   const tabs = await browser.tabs.query({});
-  tabs.map(async tab => {
-    if (tab.url === "about:blank") {
+  for (const tab of tabs) {
+    if (!tab.url || tab.url === "about:blank") {
       if (tab.status !== "loading") {
-        return;
+        continue;
       }
       // about:blank Tab is still loading, so we indicate that we wait for it to load
       // and register the event listener if we haven't yet.
@@ -463,77 +501,54 @@ async function maybeReopenAlreadyOpenTabs () {
       }
     } else {
       // Tab already has an url, maybe we reopen
-      maybeReopenTab(tab.url, tab);
+      maybeReopenTab(tab.url, tab).catch(() => {});
     }
-  });
+  }
 }
 
-function stripAzclid(url) {
+const TRACKING_PARAMS = ["azclid", "fbclid"];
+
+function stripTrackingParams(url) {
   const strippedUrl = new URL(url);
-  strippedUrl.searchParams.delete("azclid");
-  return strippedUrl.href;
-}
-
-async function getActiveTab () {
-  const [activeTab] = await browser.tabs.query({currentWindow: true, active: true});
-  return activeTab;
-}
-
-async function windowFocusChangedListener (windowId) {
-  if (windowId !== browser.windows.WINDOW_ID_NONE) {
-    const activeTab = await getActiveTab();
-    updateBrowserActionIcon(activeTab);
-  }
-}
-
-function tabUpdateListener (tabId, changeInfo, tab) {
-  updateBrowserActionIcon(tab);
-}
-
-async function updateBrowserActionIcon (tab) {
-
-  browser.browserAction.setBadgeText({text: ""});
-
-  const url = tab.url;
-  const hasBeenAddedToAmazonContainer = await isAddedToAmazonContainer(url);
-
-  if (isAmazonURL(url)) {
-    browser.storage.local.set({"CURRENT_PANEL": "on-amazon"});
-    browser.browserAction.setPopup({tabId: tab.id, popup: "./panel.html"});
-  } else if (hasBeenAddedToAmazonContainer) {
-    browser.storage.local.set({"CURRENT_PANEL": "in-azc"});
-  } else {
-    const tabState = tabStates[tab.id];
-    const panelToShow = (tabState && tabState.trackersDetected) ? "trackers-detected" : "no-trackers";
-    browser.storage.local.set({"CURRENT_PANEL": panelToShow});
-    browser.browserAction.setPopup({tabId: tab.id, popup: "./panel.html"});
-    browser.browserAction.setBadgeBackgroundColor({color: "#A44D00"});
-    if ( panelToShow === "trackers-detected" ) {
-      browser.browserAction.setBadgeText({text: "!"});
+  let stripped = false;
+  for (const param of TRACKING_PARAMS) {
+    if (strippedUrl.searchParams.has(param)) {
+      strippedUrl.searchParams.delete(param);
+      stripped = true;
     }
   }
+  return stripped ? strippedUrl.href : null;
 }
 
 async function containAmazon (request) {
-  if (tabsWaitingToLoad[request.tabId]) {
-    // Cleanup just to make sure we don't get a race-condition with startup reopening
-    delete tabsWaitingToLoad[request.tabId];
-  }
-
-  const tab = await browser.tabs.get(request.tabId);
-
-  updateBrowserActionIcon(tab);
-
-  const url = new URL(request.url);
-  const urlSearchParm = new URLSearchParams(url.search);
-  if (urlSearchParm.has("azclid")) {
-    return {redirectUrl: stripAzclid(request.url)};
-  }
   // Listen to requests and open Amazon into its Container,
   // open other sites into the default tab context
   if (request.tabId === -1) {
     // Request doesn't belong to a tab
     return;
+  }
+
+  if (tabsWaitingToLoad[request.tabId]) {
+    // Cleanup just to make sure we don't get a race-condition with startup reopening
+    delete tabsWaitingToLoad[request.tabId];
+  }
+
+  let tab;
+  try {
+    tab = await browser.tabs.get(request.tabId);
+  } catch (e) {
+    // Tab is gone, cancel the request so it doesn't open elsewhere
+    return { cancel: true };
+  }
+
+  let strippedUrl = null;
+  try {
+    strippedUrl = stripTrackingParams(request.url);
+  } catch (e) {
+    // Invalid URL, fall through to containment
+  }
+  if (strippedUrl) {
+    return {redirectUrl: strippedUrl};
   }
 
   return maybeReopenTab(request.url, tab, request);
@@ -550,35 +565,33 @@ async function blockAmazonSubResources (requestDetails) {
     return {};
   }
 
-  const urlIsAmazon = isAmazonURL(requestDetails.url);
-  const originUrlIsAmazon = isAmazonURL(requestDetails.originUrl);
+  let urlIsAmazon = false;
+  let originUrlIsAmazon = false;
+  try {
+    urlIsAmazon = isAmazonURL(requestDetails.url);
+    originUrlIsAmazon = isAmazonURL(requestDetails.originUrl);
+  } catch (e) {
+    return {};
+  }
 
   if (!urlIsAmazon) {
     return {};
   }
 
   if (originUrlIsAmazon) {
-    const message = {msg: "amazon-domain"};
-    // Send the message to the content_script
-    browser.tabs.sendMessage(requestDetails.tabId, message);
     return {};
   }
 
-  const hasBeenAddedToAmazonContainer = await isAddedToAmazonContainer(requestDetails.originUrl);
+  let hasBeenAddedToAmazonContainer = false;
+  try {
+    hasBeenAddedToAmazonContainer = await isAddedToAmazonContainer(requestDetails.originUrl);
+  } catch (e) {
+    hasBeenAddedToAmazonContainer = false;
+  }
 
   if (urlIsAmazon && !originUrlIsAmazon) {
-    if (!hasBeenAddedToAmazonContainer ) {
-      const message = {msg: "blocked-amazon-subresources"};
-      // Send the message to the content_script
-      browser.tabs.sendMessage(requestDetails.tabId, message);
-
-      tabStates[requestDetails.tabId] = { trackersDetected: true };
+    if (!hasBeenAddedToAmazonContainer) {
       return {cancel: true};
-    } else {
-      const message = {msg: "allowed-amazon-subresources"};
-      // Send the message to the content_script
-      browser.tabs.sendMessage(requestDetails.tabId, message);
-      return {};
     }
   }
   return {};
@@ -603,12 +616,6 @@ function setupWebRequestListeners() {
   browser.webRequest.onBeforeRequest.addListener(blockAmazonSubResources, {urls: ["<all_urls>"]}, ["blocking"]);
 }
 
-function setupWindowsAndTabsListeners() {
-  browser.tabs.onUpdated.addListener(tabUpdateListener);
-  browser.tabs.onRemoved.addListener(tabId => delete tabStates[tabId] );
-  browser.windows.onFocusChanged.addListener(windowFocusChangedListener);
-}
-
 (async function init () {
   await setupMACAddonListeners();
   macAddonEnabled = await isMACAddonEnabled();
@@ -623,23 +630,37 @@ function setupWindowsAndTabsListeners() {
     console.log(error);
     return;
   }
-  clearAmazonCookies();
   generateAmazonHostREs();
   setupWebRequestListeners();
-  setupWindowsAndTabsListeners();
 
-  browser.runtime.onMessage.addListener( (message, {url}) => {
+  browser.runtime.onMessage.addListener((message, sender) => {
+    const senderUrl = sender && sender.url;
     if (message === "what-sites-are-added") {
-      return browser.storage.local.get().then(azcStorage => azcStorage.domainsAddedToAmazonContainer);
-    } else if (message.removeDomain) {
-      removeDomainFromAmazonContainer(message.removeDomain).then( results => results );
-    } else {
-      addDomainToAmazonContainer(url).then( results => results);
+      return browser.storage.local.get().then(azcStorage => {
+        if (!Array.isArray(azcStorage.domainsAddedToAmazonContainer)) {
+          return [];
+        }
+        return azcStorage.domainsAddedToAmazonContainer;
+      });
+    } else if (message && typeof message === "object" && message.removeDomain) {
+      return removeDomainFromAmazonContainer(message.removeDomain);
+    } else if (senderUrl) {
+      return addDomainToAmazonContainer(senderUrl);
     }
+    return undefined;
   });
 
-  maybeReopenAlreadyOpenTabs();
+  try {
+    await clearAmazonCookies();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.log(e);
+  }
 
-  const activeTab = await getActiveTab();
-  updateBrowserActionIcon(activeTab);
+  try {
+    await maybeReopenAlreadyOpenTabs();
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.log(e);
+  }
 })();
