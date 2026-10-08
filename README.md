@@ -6,9 +6,9 @@ Amazon Container Plus is an add-on you can install on Firefox to prevent Amazon 
 
 **Note:** To learn more about Containers in general, see [Firefox Multi-Account Containers](https://support.mozilla.org/kb/containers).
 
-## Forked from Mozilla's Facebook Container  
+## Forked from Mozilla's Facebook Container
 
-Mozilla's [Facebook Container](https://addons.mozilla.org/en-US/firefox/addon/facebook-container/) was the inspiration and template for this extension.
+This project is a fork of [krober/contain-amazon](https://github.com/krober/contain-amazon), which in turn was inspired by and built on Mozilla's [Facebook Container](https://addons.mozilla.org/en-US/firefox/addon/facebook-container/).
 
 ## How does Amazon Container Plus work?
 
@@ -20,10 +20,14 @@ Every time you visit Amazon, it will open in its own container, separate from ot
 
 We’ve made it easy to take steps to protect your privacy so you can go on with your day.
 
-1. [Install Amazon Container Plus](https://addons.mozilla.org/firefox/addon/contain-amazon/).
+1. [Install Amazon Container Plus](https://addons.mozilla.org/firefox/addon/contain-amazon-plus/).
 2. Log out of Amazon and restart Firefox.
 2. Open Amazon and use it like you normally would.  Firefox will automatically switch to the Amazon Container tab for you.
 3. If you click on a link to a page outside of Amazon or type in another website in the address bar, Firefox will load them outside of the Amazon Container
+
+## How do I add custom domains?
+
+Amazon Container Plus can also open other websites you choose in the Amazon Container. Open the add-on's options page from **about:addons → Amazon Container Plus → Options**, enter a domain such as `example.com`, and select **Add**. The same list lets you remove custom domains again. Only the exact hostname you enter is matched, not its subdomains.
 
 ## How does this affect Amazon's features?
 
