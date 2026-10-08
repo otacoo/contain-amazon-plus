@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Project moved to github.com/otacoo/contain-amazon.
+- Replace deprecated `applications` key with `browser_specific_settings` and declare `data_collection_permissions` (`none`) as required by AMO.
 
 ### Added
 
