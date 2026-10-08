@@ -95,7 +95,7 @@ const AMAZON_SERVICES_DOMAINS = [
   "camelcamelcamel.de",
   "camelcamelcamel.es",
   "camelcamelcamel.it",
-  "kadgar.net",
+  "multitwitch.tv",
   "primevideo.com",
   "ring.com",
   "twitch.com",

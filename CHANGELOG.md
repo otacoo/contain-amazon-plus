@@ -2,18 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.2] - 2026-10-08
+
+### Added
+
+- Contain Multitwitch (`multitwitch.tv`).
+
+### Removed
+
+- Kadgar (`kadgar.net`) is no longer contained.
+
 ## [2.1.1] - 2026-10-08
 
 ### Changed
 
 - Require Firefox 142 (`strict_min_version`), as needed for `data_collection_permissions`.
 
-
 ## [2.1.0] - 2026-10-08
 
 ### Changed
 
-- Project moved to github.com/otacoo/contain-amazon.
+- Project moved to github.com/otacoo/contain-amazon-plus.
 - Replace deprecated `applications` key with `browser_specific_settings` and declare `data_collection_permissions` (`none`) as required by AMO.
 
 ### Added
@@ -59,9 +68,10 @@ All notable changes to this project will be documented in this file.
 
 - Initial release: isolates Amazon into a container and prevents Amazon from tracking browsing outside of it.
 
-[Unreleased]: https://github.com/otacoo/contain-amazon/compare/v2.1.1...HEAD
-[2.1.1]: https://github.com/otacoo/contain-amazon/compare/v2.1.0...v2.1.1
-[2.1.0]: https://github.com/otacoo/contain-amazon/compare/v2.0.0...v2.1.0
-[2.0.0]: https://github.com/otacoo/contain-amazon/compare/v1.0.1...v2.0.0
-[1.0.1]: https://github.com/otacoo/contain-amazon/compare/v1.0.0...v1.0.1
-[1.0.0]: https://github.com/otacoo/contain-amazon/releases/tag/v1.0.0
+[Unreleased]: https://github.com/otacoo/contain-amazon-plus/compare/v2.1.2...HEAD
+[2.1.2]: https://github.com/otacoo/contain-amazon-plus/compare/v2.1.1...v2.1.2
+[2.1.1]: https://github.com/otacoo/contain-amazon-plus/compare/v2.1.0...v2.1.1
+[2.1.0]: https://github.com/otacoo/contain-amazon-plus/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/otacoo/contain-amazon-plus/compare/v1.0.1...v2.0.0
+[1.0.1]: https://github.com/otacoo/contain-amazon-plus/compare/v1.0.0...v1.0.1
+[1.0.0]: https://github.com/otacoo/contain-amazon-plus/releases/tag/v1.0.0
