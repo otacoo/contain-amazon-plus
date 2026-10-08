@@ -69,7 +69,10 @@ const AUDIBLE_DOMAINS = [
   "audible.it",
   "audible.ca",
   "audible.in",
-  "audible.co.jp"
+  "audible.co.in",
+  "audible.co.jp",
+  "audible.es",
+  "audible.com.br"
 ];
 
 const WHOLEFOODS_DOMAINS = [
@@ -86,7 +89,15 @@ const AMAZON_SERVICES_DOMAINS = [
   "amzn.to",
   "awscloud.com",
   "awsevents.com",
+  "camelcamelcamel.com",
+  "camelcamelcamel.ca",
+  "camelcamelcamel.co.uk",
+  "camelcamelcamel.de",
+  "camelcamelcamel.es",
+  "camelcamelcamel.it",
+  "kadgar.net",
   "primevideo.com",
+  "ring.com",
   "twitch.com",
   "twitch.tv",
   "ext-twitch.tv",
