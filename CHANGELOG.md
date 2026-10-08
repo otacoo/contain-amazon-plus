@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.1] - 2026-10-08
+
+### Changed
+
+- Use a unique add-on ID, `amazon-container-plus@otacoo`, so AMO no longer reports a duplicate with the fork.
+- Require Firefox 142 (`strict_min_version`), as needed for `data_collection_permissions`.
+
+### Fixed
+
+- Republish 2.1.0 with the manifest consent keys required by AMO validation.
+
 ## [2.1.0] - 2026-10-08
 
 ### Changed
@@ -52,7 +63,8 @@ All notable changes to this project will be documented in this file.
 
 - Initial release: isolates Amazon into a container and prevents Amazon from tracking browsing outside of it.
 
-[Unreleased]: https://github.com/otacoo/contain-amazon/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/otacoo/contain-amazon/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/otacoo/contain-amazon/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/otacoo/contain-amazon/compare/v2.0.0...v2.1.0
 [2.0.0]: https://github.com/otacoo/contain-amazon/compare/v1.0.1...v2.0.0
 [1.0.1]: https://github.com/otacoo/contain-amazon/compare/v1.0.0...v1.0.1
